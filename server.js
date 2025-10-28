@@ -68,8 +68,11 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const httpCode = url.pathname.substring(1); // Видаляємо початковий '/'
 
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} from ${req.connection.remoteAddress}`);
+
   // Перевірка валідності HTTP коду
   if (!httpCode || !/^\d{3}$/.test(httpCode)) {
+    console.log(`Invalid HTTP code format: ${httpCode}`);
     res.writeHead(400, { 'Content-Type': 'text/plain' });
     res.end('Invalid HTTP code format');
     return;
@@ -82,10 +85,12 @@ const server = http.createServer(async (req, res) => {
         let imageData = await readFromCache(httpCode);
         
         if (!imageData) {
+          console.log(`Cache miss for ${httpCode}, fetching from http.cat`);
           // Якщо немає в кеші, запитуємо з http.cat
           imageData = await fetchFromHttpCat(httpCode);
           
           if (!imageData) {
+            console.log(`Image not found on http.cat for code ${httpCode}`);
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('Image not found');
             return;
@@ -93,6 +98,9 @@ const server = http.createServer(async (req, res) => {
           
           // Зберігаємо в кеш
           await writeToCache(httpCode, imageData);
+          console.log(`Image for ${httpCode} cached successfully`);
+        } else {
+          console.log(`Cache hit for ${httpCode}`);
         }
         
         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
