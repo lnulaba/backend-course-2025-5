@@ -70,11 +70,28 @@ const server = http.createServer(async (req, res) => {
 
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url} from ${req.connection.remoteAddress}`);
 
+  // Обробка кореневого шляху
+  if (!httpCode) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`
+      <h1>🐱 Кешуючий проксі-сервер для HTTP Cat</h1>
+      <p>Використання: <code>GET /{HTTP_CODE}</code></p>
+      <p>Приклади:</p>
+      <ul>
+        <li><a href="/200">GET /200</a> - OK</li>
+        <li><a href="/404">GET /404</a> - Not Found</li>
+        <li><a href="/500">GET /500</a> - Internal Server Error</li>
+      </ul>
+      <p>Підтримувані методи: GET, PUT, DELETE</p>
+    `);
+    return;
+  }
+
   // Перевірка валідності HTTP коду
-  if (!httpCode || !/^\d{3}$/.test(httpCode)) {
+  if (!/^\d{3}$/.test(httpCode)) {
     console.log(`Invalid HTTP code format: ${httpCode}`);
-    res.writeHead(400, { 'Content-Type': 'text/plain' });
-    res.end('Invalid HTTP code format');
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(`Invalid HTTP code format: "${httpCode}". Please use 3-digit HTTP status code (e.g., 200, 404, 500)`);
     return;
   }
 
